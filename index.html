@@ -5,15 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GrownFolk United: State Hubs</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-    .container { max-width: 1200px; margin: auto; }
-    h1 { text-align: center; color: #333; }
-    #searchBar { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; }
-    #walletWarning { display: none; color: red; text-align: center; margin-bottom: 20px; }
-    #stateHubs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-    .state-tile { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
-    .state-tile a { color: #007bff; text-decoration: none; }
-    .state-tile a.disabled { color: #999; pointer-events: none; }
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      flex: 1;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    #searchBar {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #dfe6e9;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    #searchBar:focus {
+      border-color: #3498db;
+      outline: none;
+    }
+    #walletWarning {
+      display: none;
+      color: #e74c3c;
+      text-align: center;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      background: #ffe6e6;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    #stateHubs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      padding-bottom: 20px;
+    }
+    .state-tile {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+    .state-tile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    .state-tile h3 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #2c3e50;
+    }
+    .state-tile a {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .state-tile a.disabled {
+      color: #95a5a6;
+      pointer-events: none;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.8em; }
+      #searchBar { font-size: 14px; padding: 10px; }
+      .state-tile { padding: 15px; }
+      .state-tile h3 { font-size: 1em; }
+    }
   </style>
 </head>
 <body>
@@ -92,19 +171,26 @@
     async function initWeb3() {
       if (!window.ethereum) {
         document.getElementById("walletWarning").style.display = "block";
+        document.getElementById("stateHubs").innerHTML = "";
         return false;
       }
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      resolverContract = new ethers.Contract(resolverAddress, resolverABI, provider);
-      return true;
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        resolverContract = new ethers.Contract(resolverAddress, resolverABI, provider);
+        return true;
+      } catch (error) {
+        console.error("Web3 initialization failed:", error);
+        document.getElementById("walletWarning").style.display = "block";
+        return false;
+      }
     }
 
-    // Placeholder function to check URL resolution (replace with real service)
+    // Placeholder function to check URL resolution (customize as needed)
     async function checkUrlResolution(url) {
       try {
         const response = await fetch(url, { method: "HEAD", mode: "no-cors" });
-        return true; // Assume resolving if no error (customize as needed)
+        return true; // Assume resolving if no error
       } catch {
         return false;
       }
@@ -114,7 +200,7 @@
     async function loadStateHubs() {
       try {
         const approvedSuffixes = await resolverContract.getAllApprovedSuffixes();
-        const hubs = await Promise.all(approvedSuffixes.map(async (suffix) => {
+        const hubs = await Promise.all(approvedSuffixes.map(async (suffix, index) => {
           const url = `https://${suffix}`;
           const isResolving = await checkUrlResolution(url);
           return {
@@ -122,14 +208,15 @@
             url,
             isResolving,
             display: stateConfig[suffix]?.name || suffix.replace(".grownfolk", ""),
-            emoji: stateConfig[suffix]?.emoji || "🌎"
+            emoji: stateConfig[suffix]?.emoji || "🌎",
+            animationDelay: index * 0.1 // Staggered animation
           };
         }));
 
         renderTiles(hubs.filter(hub => hub.isResolving));
       } catch (error) {
         console.error("Error loading state hubs:", error);
-        document.getElementById("stateHubs").innerHTML = "<p>Error loading hubs. Please try again.</p>";
+        document.getElementById("stateHubs").innerHTML = "<p style='text-align: center; color: #e74c3c;'>Error loading hubs. Please try again later.</p>";
       }
     }
 
@@ -137,7 +224,7 @@
     function renderTiles(hubs) {
       const stateHubsDiv = document.getElementById("stateHubs");
       stateHubsDiv.innerHTML = hubs.map(hub => `
-        <div class="state-tile">
+        <div class="state-tile" style="animation-delay: ${hub.animationDelay}s;">
           <h3>${hub.emoji} ${hub.display}</h3>
           <a href="${hub.url}" class="${hub.isResolving ? '' : 'disabled'}" target="_blank">${hub.suffix}</a>
         </div>
