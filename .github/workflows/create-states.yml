@@ -1,10 +1,10 @@
 name: Create State Directories with index.html
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
   push:
     branches:
-      - main # Runs when changes are pushed to the 'main' branch
+      - main
 
 jobs:
   create-directories:
@@ -14,19 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create directories and index.html files
+      - name: Create directories for all states
         run: |
           mkdir -p states
-          states=("alabama" "alaska" "arizona" "arkansas" "california" "colorado" "connecticut" "delaware" "florida" "georgia" \
-          "hawaii" "idaho" "illinois" "indiana" "iowa" "kansas" "kentucky" "louisiana" "maine" "maryland" \
-          "massachusetts" "michigan" "minnesota" "mississippi" "missouri" "montana" "nebraska" "nevada" "newhampshire" \
-          "newjersey" "newmexico" "newyork" "northcarolina" "northdakota" "ohio" "oklahoma" "oregon" "pennsylvania" \
-          "rhodeisland" "southcarolina" "southdakota" "tennessee" "texas" "utah" "vermont" "virginia" \
-          "washington" "westvirginia" "wisconsin" "wyoming")
-          
-          # Loop through the states, create directories, and add index.html files
-          for state in "${states[@]}"; do
+          echo "Creating state directories..."
+          for state in alabama alaska arizona arkansas california colorado connecticut delaware florida georgia hawaii idaho illinois indiana iowa kansas kentucky louisiana maine maryland massachusetts michigan minnesota mississippi missouri montana nebraska nevada newhampshire newjersey newmexico newyork northcarolina northdakota ohio oklahoma oregon pennsylvania rhodeisland southcarolina southdakota tennessee texas utah vermont virginia washington westvirginia wisconsin wyoming
+          do
             mkdir -p "states/$state"
+            echo "Directory for $state created."
+          done
+
+      - name: Add index.html files
+        run: |
+          echo "Adding index.html files..."
+          for state in alabama alaska arizona arkansas california colorado connecticut delaware florida georgia hawaii idaho illinois indiana iowa kansas kentucky louisiana maine maryland massachusetts michigan minnesota mississippi missouri montana nebraska nevada newhampshire newjersey newmexico newyork northcarolina northdakota ohio oklahoma oregon pennsylvania rhodeisland southcarolina southdakota tennessee texas utah vermont virginia washington westvirginia wisconsin wyoming
+          do
             echo "<!DOCTYPE html>
 <html>
 <head>
@@ -36,6 +38,7 @@ jobs:
   <h1>Welcome to $state</h1>
 </body>
 </html>" > "states/$state/index.html"
+            echo "index.html added for $state"
           done
 
       - name: Commit and push changes
@@ -45,5 +48,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add states
-          git commit -m "Add directories and index.html files for all 50 states" || echo "No changes to commit"
-          git push || echo "Push failed"
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add directories and index.html files for all 50 states"
+            git push
+          fi
