@@ -36,7 +36,8 @@ jobs:
   <h1>Welcome to $state</h1>
 </body>
 </html>" > "states/$state/index.html"
-          
+          done
+
       - name: Commit and push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,9 +47,3 @@ jobs:
           git add states
           git commit -m "Add directories and index.html files for all 50 states" || echo "No changes to commit"
           git push || echo "Push failed"
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add states
-          git commit -m "Add directories and index.html files for all 50 states"
-          git push
